@@ -11,12 +11,16 @@ public class AttackTower : MonoBehaviour
     public Transform turret;
     public Transform target = null;
 
-    protected List<Transform> potentialEnemies = new List<Transform>();
+    public AudioSource speaker;
+    public AudioClip shootSound;
+
+    [SerializeField]
+    protected List<Transform> potentialEnemies = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        speaker = GetComponent<AudioSource>();
     }
     private void Awake()
     {
@@ -28,6 +32,19 @@ public class AttackTower : MonoBehaviour
     {
         
     }
+
+    // ===================== ATTACKING =====================\
+    public virtual void Attack()
+    {
+        if (!target) return;
+        OnAttack();
+    }
+    public virtual void OnAttack() { }
+
+
+    // ===================== ENEMY HANDLING ===================== 
+    public virtual void OnEnemyEnter() { }
+    public virtual void OnEnemyExit() { }
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag == "Enemy")
@@ -49,7 +66,6 @@ public class AttackTower : MonoBehaviour
         }
     }
 
-    public virtual void OnEnemyEnter() { }
-    public virtual void OnEnemyExit() { }
+    
 
 }

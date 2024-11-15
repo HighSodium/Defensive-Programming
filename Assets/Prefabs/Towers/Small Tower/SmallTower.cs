@@ -4,14 +4,11 @@ using UnityEngine;
 public class SmallTower : AttackTower
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public override void Start()
     {
-
+        base.Start();
     }
-    private void Awake()
-    {
 
-    }
 
     // Update is called once per frame
     void FixedUpdate()
@@ -31,33 +28,49 @@ public class SmallTower : AttackTower
         Transform foundEnemy = null;
         while (potentialEnemies.Count > 0 && !foundEnemy)
         {
-            foundEnemy = potentialEnemies.Last();
+            foundEnemy = potentialEnemies.First();
             if (!foundEnemy)
-                potentialEnemies.Remove(potentialEnemies.Last());
+                potentialEnemies.Remove(potentialEnemies.First());
         }
         return foundEnemy;
     }
 
-    public override void Attack()
+    public override void AttackEnemy()
     {
         //if no target, we need to stop attacking
         //if (!target) return;
         target = FindTarget();
         if (!target)
         {
-            CancelInvoke(nameof(Attack));
+            CancelInvoke(nameof(AttackEnemy));
             return;
         }
 
-        turret.LookAt(target.position);
+        targetPosX = (int)target.position.x;
+        targetPosY = (int)target.position.z;
 
-        base.Attack();
-        if (target.root.TryGetComponent(out IDamageable hit))
+        shootPos.x = targetPosX;
+        shootPos.z = targetPosY;
+
+        
+
+        //get manhattan distance of current postion to target position
+        int cellDistance = Grid.GetGridDistance(transform.position, target.position);
+        Debug.Log($"Dist to target: {cellDistance}");
+        if(cellDistance > towerStats[TowerStats.Stat.TowerRange].Total)
         {
-            speaker.PlayOneShot(shootSound, 0.2f);
-            hit.ApplyHit(damage);
-            
+            CancelInvoke(nameof(AttackEnemy));
+            return;
         }
+        turret.LookAt(shootPos);
+
+        int damageArea = (int)towerStats[TowerStats.Stat.DamageArea].Total;
+        int damage = (int)towerStats[TowerStats.Stat.Damage].Total;
+        AttackArea(shootPos, damageArea, damage);
+        Debug.Log($"Hit for {damage} damage in {damageArea} area at {shootPos}");
+
+        speaker.PlayOneShot(shootSound, 0.2f);
+
     }
     public override void OnAttack()
     {
@@ -67,9 +80,9 @@ public class SmallTower : AttackTower
 
     override public void OnEnemyEnter()
     {
-        if (!IsInvoking(nameof(Attack)))
+        if (!IsInvoking(nameof(AttackEnemy)))
         {
-            InvokeRepeating(nameof(Attack), 0, tickRate);
+            InvokeRepeating(nameof(AttackEnemy), 0, 1 / towerStats[TowerStats.Stat.TickRate].Total);
         }
     }
 
